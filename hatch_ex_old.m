@@ -7,60 +7,73 @@
 %   45-degree hatch, 8pt spacing, black lines, no fill.
 figure('Name', 'Example 1 — Basic');
 hatch([0 1 1 0], [0 0 1 1]);
-title('Basic usage — defaults (45°, 0.25 in)');
+axis equal;
+title('Basic usage — defaults (45°, 8 pt)');
 
 %% Example 2: Change angle and spacing
 %   30-degree hatch at 12pt spacing.
 figure('Name', 'Example 2 — Angle & Spacing');
-hatch([0 1 1 0], [0 0 1 1], Angle=30, Spacing=0.33);
-title('Angle = 30°, Spacing = 0.33 in');
+hatch([0 1 1 0], [0 0 1 1], Angle=30, Spacing=12);
+axis equal;
+title('Angle = 30°, Spacing = 12 pt');
 
 %% Example 3: Specify a polygon face color (positional)
 %   Passing a third positional argument sets the face color behind the
 %   hatch lines (equivalent to FaceColor).
-figure('Name', 'Example 3');
-hatch([0 1 0.5], [0 0 1], Angle=-45);
-title('Triangle');
+figure('Name', 'Example 3 — Face color (positional)');
+hatch([0 1 0.5], [0 0 1], [0.7 0.85 1]);
+axis equal;
+title('Triangle with light-blue face');
 
 %% Example 4: Fine hatching with custom line color
 %   Dense, red hatching at a shallow angle.
 figure('Name', 'Example 4 — Custom line color');
-hatch([0 1 1 0], [0 0 1 1], Color='r', Spacing=4/96, Angle=15);
+hatch([0 1 1 0], [0 0 1 1], LineColor='r', Spacing=4, Angle=15);
 axis equal;
 title('Dense red hatching, 15°, 4 pt');
 
 %% Example 5: Cross-hatch by layering two hatch calls
 %   Combine two hatch objects on the same axes for a cross-hatch effect.
 figure('Name', 'Example 5 — Cross-hatch');
-ax = gca(); hold on;
-hatch([0 1 1 0], [0 0 1 1], Angle=45,  Spacing=10/96, Color=ax.XColor);
-hatch([0 1 1 0], [0 0 1 1], Angle=-45, Spacing=10/96, Color=ax.XColor);
-title('Cross-hatch (two layers)');
+ax = gca();
+hatch(ax, [0 1 1 0], [0 0 1 1], Angle=45,  Spacing=10, LineColor='k');
+hatch(ax, [0 1 1 0], [0 0 1 1], Angle=-45, Spacing=10, LineColor='k');
+axis(ax, 'equal');
+title(ax, 'Cross-hatch (two layers)');
 
-%% Example 6: Hatch without boundary
-figure('Name', 'Example 6 — No boundary');
-hatch([0 1 1 0], [0 0 1 1], PlotBounds=false);
-title('Hatch w/o boundary');
+%% Example 6: Hatch over a solid background with custom edge
+%   FaceColor gives the polygon a solid fill; the hatch lines are drawn
+%   on top.  EdgeColor and LineColor are set independently.
+figure('Name', 'Example 6 — Solid fill + hatch');
+hatch([0 1 1 0], [0 0 1 1], ...
+  FaceColor=[0.9 0.95 1], ...
+  FaceAlpha=1, ...
+  Angle=60, ...
+  Spacing=8, ...
+  LineColor=[0 0.4 0.8], ...
+  LineWidth=1, ...
+  EdgeColor=[0 0 0.5]);
+axis equal;
+title('Solid fill + blue hatching');
 
 %% Example 7: Non-rectangular polygon on a shared axes
 %   Hatch a pentagon alongside a unit-square patch to show clipping.
 figure('Name', 'Example 7 — Non-rectangular polygon');
-ax = gca(); hold on;
-xlim(ax, [-0.1 1.1]);
-ylim(ax, [-0.1 1.1]);
-axis equal;
+ax = gca();
 
 % Background reference square
-patch([0 1 1 0], [0 0 1 1], [0.95 0.95 0.95], EdgeColor='none', ...
-    FaceAlpha=0.5);
+patch(ax, [0 1 1 0], [0 0 1 1], [0.95 0.95 0.95], EdgeColor='none');
 
 % Pentagon
 theta = (90:72:90+360-72) * pi/180;
 px = 0.5 + 0.45 * cos(theta);
 py = 0.5 + 0.45 * sin(theta);
-hatch(px, py, ...
-  Angle=45, Spacing=7/96, Color=[0 0.5 0]);
+hatch(ax, px, py, FaceColor=[0.8 1 0.8], FaceAlpha=0.5, ...
+  Angle=45, Spacing=7, LineColor=[0 0.5 0]);
 
+axis(ax, 'equal');
+xlim(ax, [-0.1 1.1]);
+ylim(ax, [-0.1 1.1]);
 title(ax, 'Pentagon with green hatch');
 
 %% Example 8: Self-intersecting polygon — pentagram (5-pointed star)
@@ -79,14 +92,38 @@ tipOrder = mod((0 : nPts-1) * 2, nPts) + 1;   % connect every 2nd tip
 starX    = cos(tipAngle(tipOrder));
 starY    = sin(tipAngle(tipOrder));
 
-hatch(starX, starY);
+hatch(ax, starX, starY, ...
+  FaceColor=[1 0.95 0.8], ...
+  FaceAlpha=1, ...
+  Angle=45, ...
+  Spacing=7, ...
+  LineColor=[0.7 0.4 0], ...
+  LineWidth=0.75, ...
+  EdgeColor='k');
 
-
+axis(ax, 'equal');
+axis(ax, 'off');
 title(ax, 'Self-intersecting pentagram (even-odd hatching)');
 
-%% Example 9, hatch lines at 0 and 90 deg
-figure('Name', 'Example 9 — Edge Cases');
-axes;hold on;
-hatch([0 1 1 0], [0 0 1 1], Angle=0);
-hatch([0 1 1], [0 0 1], Angle=90);
-title('Lines at 0 and 90 deg');
+%% Example 9: Matrix inputs — multiple polygons in one call
+%   When `x` and `y` are matrices of the same size, with each column
+%   representing the vertex coordinates of one polygon, `hatch` will
+%   draw multiple polygons in a single call.  Each column is treated
+%   as an independent polygon (vertices down the rows).
+figure('Name', 'Example 9 — Matrix inputs');
+ax = gca();
+
+% Two rectangles provided as 4x2 matrices (columns are polygons)
+X = [0  2;
+  1  3;
+  1  3;
+  0  2];
+Y = [0  0;
+  0  0;
+  1  1;
+  1  1];
+
+h = hatch(ax, X, Y, FaceColor=[0.9 0.85 1], FaceAlpha=0.9, ...
+  Angle=30, Spacing=10, LineColor=[0 0 0.6]);
+axis(ax, 'equal');
+title(ax, 'Two rectangles from X/Y matrices (columns are polygons)');
