@@ -5,8 +5,8 @@ arguments
     y (1, :) double
     opts.Parent = gca;
     opts.Angle (1, 1) double = 45;
-    opts.Spacing (1, 1) double = 0.1;
-    opts.Length (1, 1) double = 0.25;
+    opts.Spacing (1, 1) double = 8;
+    opts.Length (1, 1) double = 12;
     opts.PlotBounds (1, 1) {mustBeNumericOrLogical} = true;
     opts.Plot (1, 1) {mustBeNumericOrLogical} = true;
     opts.Method (1, 1) string {mustBeMember(opts.Method, ["Absolute", "Relative"])} = "Absolute"
@@ -89,16 +89,25 @@ end
 function [xs, ys, scaleX, scaleY] = data_to_screen(x, y, ha)
 % convert data coordiantes to screen coordinates in inches
 
+POINTS_PER_INCH = 72;
+DPI = get(groot, "ScreenPixelsPerInch");
+
 dataWidth = ha.XLim(2) - ha.XLim(1);
 dataHeight = ha.YLim(2) - ha.YLim(1);
-pos = getpixelposition(ha)./get(groot, "ScreenPixelsPerInch");
+pos = getpixelposition(ha)./DPI.*POINTS_PER_INCH;
 screenWidth = pos(3);
 screenHeight = pos(4);
 
-scaleX = screenWidth/dataWidth;
-scaleY = screenHeight./dataHeight;
+% inferred aspect raito from pixelposition doesn't match what's actually on
+% screen.  Actual display aligns with PlotBoxAspectRatio.  This correction
+% seems to work
+scaleX = screenWidth./dataWidth;
+scaleY = screenHeight./dataHeight ...
+       .* ha.PlotBoxAspectRatio(2)./ha.PlotBoxAspectRatio(1) ...
+       .* screenWidth./screenHeight;
 xs = x.*scaleX;
 ys = y.*scaleY;
+
 
 end
 

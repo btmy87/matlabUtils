@@ -1,23 +1,23 @@
 %% example 1, control step response
 
-t = linspace(0, 10, 1001);
+t = linspace(0, 5, 1001);
 omega = 4;
-omegad = omega.*sqrt(1-zeta.^2);
 zeta = 0.5;
+omegad = omega.*sqrt(1-zeta.^2);
 alpha = omega.*zeta;
 y = 1.0 - sqrt(alpha.^2+omegad.^2)./omegad.*exp(-alpha.*t).*sin(omegad.*t + acos(zeta));
 
-tlim = [0.00, 1.00, 1.00, 2.00, 2.00, 10.00];
-llim = [0.00, 0.00, 0.90, 0.90, 0.95,  0.95];
-ulim = [1.20, 1.20, 1.20, 1.20, 1.05,  1.05];
+tlim = [0.00, 1.00, 1.00, 2.00, 2.00, t(end)];
+llim = [0.00, 0.00, 0.90, 0.90, 0.95, 0.95];
+ulim = [1.20, 1.20, 1.20, 1.20, 1.05, 1.05];
 figure;
 ha = axes;hold on;grid on;box on;
 ha.YLim = [-0.1, 1.3];
 ha.XLim = [t(1), t(end)];
 plot(t, y);
 % plot(tlim, llim)
-hatchline(tlim, llim, Angle=-60, Spacing=0.15);
-hatchline(tlim, ulim, Angle=60, Spacing=0.15);
+hatchline(tlim, llim, Angle=-45);
+hatchline(tlim, ulim, Angle=45);
 % plot(tlim, ulim)
 
 %% example 2, method comparisons
