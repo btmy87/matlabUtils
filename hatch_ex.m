@@ -96,13 +96,59 @@ figure(name="Example 10 - Patch with Hole")
 ha = axes;hold on;
 title("Example 10 - Region with a Hole")
 subtitle("Even-Odd shading can be used to create a hole in a patch")
+axis equal;
 ha.XLim = [-1.2, 1.2];
 ha.YLim = [-1.2, 1.2];
-axis equal;
+
 theta = linspace(0, 360, 361);
-x = [-1, 1, 1, -1, -1, nan, 0.5*cosd(theta),nan,-1];
-y = [-1, -1, 1, 1, -1, nan, 0.5*sind(theta),nan,-1];
-% x = [-1, 1, 1, -1, -1];
-% y = [-1, -1, 1, 1, -1];
-patch(x, y, ha.ColorOrder(1, :), FaceAlpha=0.5, EdgeColor="none");
-hatch(x, y);
+x = [-1, 1, 1, -1, nan, ...
+    0.5*cosd(theta),nan, ...
+    0.2*cosd(theta)+0.7,nan, ...
+    0.2*cosd(theta)-0.7,nan, ...
+    0.2*cosd(theta)-0.7,nan, ...
+    0.2*cosd(theta)+0.7];
+y = [-1, -1, 1, 1, nan, ...
+    0.5*sind(theta),nan,...
+    0.2*sind(theta)+0.7,nan,...
+    0.2*sind(theta)+0.7,nan,...
+    0.2*sind(theta)-0.7,nan,...
+    0.2*sind(theta)-0.7];
+hatch(x, y, Spacing=0.2);
+
+%% Example 11, a patch with a hole
+figure(name="Example 11 - Patch Holes Crossing Boundary")
+ha = axes;hold on;
+title("Example 11 - Patch with Holes Crossing Boundary")
+subtitle("Even-Odd shading will remove overlapping regions")
+axis equal;
+ha.XLim = [-1.5, 1.5];
+ha.YLim = [-1.5, 1.5];
+
+theta = linspace(0, 360, 361);
+x = [-1, 1, 1, -1, nan, ...
+    0.5*cosd(theta),nan, ...
+    0.3*cosd(theta)+1,nan, ...
+    0.3*cosd(theta)-1,nan, ...
+    0.3*cosd(theta)-1,nan, ...
+    0.3*cosd(theta)+1];
+y = [-1, -1, 1, 1, nan, ...
+    0.5*sind(theta),nan,...
+    0.3*sind(theta)+1,nan,...
+    0.3*sind(theta)+1,nan,...
+    0.3*sind(theta)-1,nan,...
+    0.3*sind(theta)-1];
+hatch(x, y, Spacing=0.15, Angle=-30);
+
+%% Example 12, Nested Holes
+figure(name="Example 12 - Nested Holes")
+ha = axes;hold on;
+title("Example 11 - Patch with Holes Crossing Boundary")
+subtitle("Even-Odd shading will remove overlapping regions")
+axis equal;
+ha.XLim = [-1.2, 1.2];
+ha.YLim = [-1.2, 1.2];
+
+theta = [linspace(0, 360, 361), nan];
+x = reshape((1.0:-0.1:0.1).*cosd(theta'), 1, []);
+y = reshape((1.0:-0.1:0.1).*sind(theta'), 1, []);
+hatch(x, y, Spacing=0.10);

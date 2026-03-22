@@ -5,7 +5,7 @@ arguments
     y (1, :) double
     opts.Parent = gca;
     opts.Angle (1, 1) double = 45;
-    opts.Spacing (1, 1) double = 0.25;
+    opts.Spacing (1, 1) double = 0.2;
     opts.PlotBounds (1, 1) {mustBeNumericOrLogical} = true;
     opts.Plot (1, 1) {mustBeNumericOrLogical} = true;
 
@@ -19,6 +19,9 @@ end
 
 assert(ndims(x) == ndims(y) && all(size(x)==size(y)), ...
     "x and y arrays must be the same size\n");
+
+assert(all(isnan(x) == isnan(y)), ...
+    "Segment pattern (nan's) must match between x and y");
 
 if isempty(opts.Color)
     opts.Color = opts.Parent.ColorOrder(opts.Parent.ColorOrderIndex, :);
@@ -54,15 +57,41 @@ end
 
 end
 
-function [xc, yc] = close_polygon(x, y)
+function [x, y] = close_polygon(x, y)
 % close polygon if not already closed
-if x(1)~=x(end) || y(1)~=y(end)
-    xc = [x, x(1)];
-    yc = [y, y(1)];
-else
-    xc = x;
-    yc = y;
+% needs to close each segment if nan separated segments are found
+
+% trim leading and force trailing nan
+if isnan(x(1))
+    x = x(2:end);
+    y = y(2:end);
 end
+if ~isnan(x(end))
+    x = [x, nan];
+    y = [y, nan];
+end
+
+% identify indicies at the end of each segment
+idx = find(isnan(x));
+
+% close each section
+for i = 1:length(idx)
+    if i == 1
+        iStart = 1;
+    else
+        iStart = idx(i-1);
+    end
+    iEnd = idx(i);
+    if x(iStart)~=x(iEnd) || y(iStart)~=y(iEnd)
+        % shift entries down and add new entry
+        x = [x(1:iEnd-1),x(iStart),x(iEnd:end)];
+        y = [y(1:iEnd-1),y(iStart),y(iEnd:end)];
+
+        % update ending indices for this and later segments
+        idx(i:end) = idx(i:end)+1;
+    end
+end
+
 end
 
 function [xs, ys, scaleX, scaleY] = data_to_screen(x, y, ha)
