@@ -90,3 +90,19 @@ axes;hold on;
 hatch([0 1 1 0], [0 0 1 1], Angle=0);
 hatch([0 1 1], [0 0 1], Angle=90);
 title('Lines at 0 and 90 deg');
+
+%% Example 10, a patch with a hole
+figure(name="Example 10 - Patch with Hole")
+ha = axes;hold on;
+title("Example 10 - Region with a Hole")
+subtitle("Even-Odd shading can be used to create a hole in a patch")
+ha.XLim = [-1.2, 1.2];
+ha.YLim = [-1.2, 1.2];
+axis equal;
+theta = linspace(0, 360, 361);
+x = [-1, 1, 1, -1, -1, nan, 0.5*cosd(theta),nan,-1];
+y = [-1, -1, 1, 1, -1, nan, 0.5*sind(theta),nan,-1];
+% x = [-1, 1, 1, -1, -1];
+% y = [-1, -1, 1, 1, -1];
+patch(x, y, ha.ColorOrder(1, :), FaceAlpha=0.5, EdgeColor="none");
+hatch(x, y);

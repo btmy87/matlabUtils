@@ -1,4 +1,4 @@
-function h = hatch(x, y, opts)
+function [h, xplot, yplot] = hatch(x, y, opts)
 
 arguments
     x (1, :) double
@@ -7,6 +7,7 @@ arguments
     opts.Angle (1, 1) double = 45;
     opts.Spacing (1, 1) double = 0.25;
     opts.PlotBounds (1, 1) {mustBeNumericOrLogical} = true;
+    opts.Plot (1, 1) {mustBeNumericOrLogical} = true;
 
     opts.Color = [];    
     opts.DisplayName (1, 1) string = "";
@@ -25,11 +26,13 @@ end
 
 % force parent to draw so we have screen coordinates, use a dummy patch
 % object to force axes limits if they haven't already been locked
-hpatch = patch('XData', x, 'YData', y);
-drawnow;
-delete(hpatch);
-opts.Parent.XLim = opts.Parent.XLim; % fix axes
-opts.Parent.YLim = opts.Parent.YLim;
+if string(opts.Parent.XLimMode) == "auto" || string(opts.Parent.YLimMode) == "auto"
+    hpatch = patch(opts.Parent, 'XData', x, 'YData', y);
+    drawnow;
+    delete(hpatch);
+    opts.Parent.XLim = opts.Parent.XLim; % fix axes
+    opts.Parent.YLim = opts.Parent.YLim;
+end
 
 % close polygon if not closed
 [xc, yc] = close_polygon(x, y);
@@ -47,7 +50,7 @@ opts.Parent.YLim = opts.Parent.YLim;
 [xh, yh] = screen_to_data(xhst, yhst, scaleX, scaleY);
 
 % plot hatch lines
-h = plot_hatch(xc, yc, xh, yh, opts);
+[h, xplot, yplot] = plot_hatch(xc, yc, xh, yh, opts);
 
 end
 
@@ -158,7 +161,7 @@ end
 
 end
 
-function h = plot_hatch(xc, yc, xh, yh, opts)
+function [h, xplot, yplot] = plot_hatch(xc, yc, xh, yh, opts)
 % plot hatch and optionally bounds as a single line
 
 % add padding nan's to hatch lines and reshape to vector
@@ -173,12 +176,16 @@ else
     yplot = yhp;
 end
 
-h = plot(opts.Parent, xplot, yplot, ...
-       LineStyle=opts.LineStyle, ...
-       Color=opts.Color, ...
-       LineWidth=opts.LineWidth, ...
-       DisplayName=opts.DisplayName, ...
-       Marker=opts.Marker, ...
-       MarkerSize=opts.MarkerSize);
+if opts.Plot
+    h = plot(opts.Parent, xplot, yplot, ...
+           LineStyle=opts.LineStyle, ...
+           Color=opts.Color, ...
+           LineWidth=opts.LineWidth, ...
+           DisplayName=opts.DisplayName, ...
+           Marker=opts.Marker, ...
+           MarkerSize=opts.MarkerSize);
+else
+    h = [];
+end
 
 end
