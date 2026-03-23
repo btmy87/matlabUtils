@@ -1,86 +1,134 @@
+%HATCHLINE Create hatch marks along a line or curve
+%   HATCHLINE draws tick marks (hatch marks) along a line or
+%   curve defined by x,y coordinates. This is useful for indicating flow
+%   direction, continuity, or simply adding visual marks to a path.
+%
+%   [H, XPLOT, YPLOT] = HATCHLINE(X, Y) creates hatch marks along the line
+%   in the current axes using default parameters. X and Y are 1D arrays of
+%   the same length defining the path vertices.
+%
+%   [H, XPLOT, YPLOT] = HATCHLINE(X, Y, OPTS) allows customization via
+%   name-value options in OPTS.
+%
+%   Output Arguments:
+%       H       - Line objects for each hatch mark
+%       XPLOT   - X coordinates of plotted hatch marks (data coordinates)
+%       YPLOT   - Y coordinates of plotted hatch marks (data coordinates)
+%
+%   Input Arguments:
+%       X       - (1 x N) double array of x-coordinates along the path
+%       Y       - (1 x N) double array of y-coordinates along the path
+%       OPTS    - Name-value options structure with fields:
+%           Parent          - Target axes (default: gca)
+%           Angle           - Mark angle in degrees (default: 45)
+%           Spacing         - Spacing between marks in points (default: 8)
+%           Length          - Mark length in points (default: 12)
+%           PlotBounds      - Plot original line (logical, default: true)
+%           Plot            - Plot hatch marks (logical, default: true)
+%           Method          - "Absolute" or "Relative" (default: "Absolute")
+%                             Absolute: marks are perpendicular to angle
+%                             Relative: marks are perpendicular to curve
+%           RelTol          - Tolerance for self-intersection check in
+%                             Relative mode (default: 1e-10)
+%           Color           - Mark color (default: next ColorOrder)
+%           DisplayName     - Legend label (default: "")
+%           LineWidth       - Line width (default: axes default)
+%           LineStyle       - Line style (default: axes default)
+%           Marker          - Marker symbol (default: axes default)
+%           MarkerSize      - Marker size (default: axes default)
+%
+%   Example:
+%       % Create hatch marks along a sine curve
+%       x = linspace(0, 2*pi, 100);
+%       y = sin(x);
+%       hatchline(x, y, 'Method', 'Relative', 'Spacing', 15, 'Color', 'blue')
+%
+%   See also: hatch, line, plot
+%
+
 function [h, xplot, yplot] = hatchline(x, y, opts)
 
 arguments
-    x (1, :) double
-    y (1, :) double
-    opts.Parent = gca;
-    opts.Angle (1, 1) double = 45;
-    opts.Spacing (1, 1) double = 8;
-    opts.Length (1, 1) double = 12;
-    opts.PlotBounds (1, 1) {mustBeNumericOrLogical} = true;
-    opts.Plot (1, 1) {mustBeNumericOrLogical} = true;
-    opts.Method (1, 1) string {mustBeMember(opts.Method, ["Absolute", "Relative"])} = "Absolute"
-    opts.RelTol (1, 1) double {mustBePositive} = 1e-10; % used for self-intersection check
+  x (1, :) double
+  y (1, :) double
+  opts.Parent = gca;
+  opts.Angle (1, 1) double = 45;
+  opts.Spacing (1, 1) double = 8;
+  opts.Length (1, 1) double = 12;
+  opts.PlotBounds (1, 1) {mustBeNumericOrLogical} = true;
+  opts.Plot (1, 1) {mustBeNumericOrLogical} = true;
+  opts.Method (1, 1) string {mustBeMember(opts.Method, ["Absolute", "Relative"])} = "Absolute"
+  opts.RelTol (1, 1) double {mustBePositive} = 1e-10; % used for self-intersection check
 
-    opts.Color = [];    
-    opts.DisplayName (1, 1) string = "";
-    opts.LineWidth (1, 1) double = get(gca, 'DefaultLineLineWidth');
-    opts.LineStyle (1, 1) string = get(gca, 'DefaultLineLineStyle');
-    opts.Marker (1, 1) string = get(gca, 'DefaultLineMarker');
-    opts.MarkerSize (1, 1) double = get(gca, 'DefaultLineMarkerSize');
+  opts.Color = [];
+  opts.DisplayName (1, 1) string = "";
+  opts.LineWidth (1, 1) double = get(gca, 'DefaultLineLineWidth');
+  opts.LineStyle (1, 1) string = get(gca, 'DefaultLineLineStyle');
+  opts.Marker (1, 1) string = get(gca, 'DefaultLineMarker');
+  opts.MarkerSize (1, 1) double = get(gca, 'DefaultLineMarkerSize');
 end
 
 assert(ndims(x) == ndims(y) && all(size(x)==size(y)), ...
-    "x and y arrays must be the same size\n");
+  "x and y arrays must be the same size\n");
 
 if isempty(opts.Color)
-    opts.Color = opts.Parent.ColorOrder(opts.Parent.ColorOrderIndex, :);
+  opts.Color = opts.Parent.ColorOrder(opts.Parent.ColorOrderIndex, :);
 end
 
 % force parent to draw so we have screen coordinates, use a dummy patch
 % object to force axes limits if they haven't already been locked
 if string(opts.Parent.XLimMode) == "auto" || string(opts.Parent.YLimMode) == "auto"
-    htemp = plot(opts.Parent, x, y);
-    drawnow;
-    delete(htemp);
+  htemp = plot(opts.Parent, x, y);
+  drawnow;
+  delete(htemp);
 
-    % revert cycling of color order index
-    opts.Parent.ColorOrderIndex = mod(opts.Parent.ColorOrderIndex - 2, size(opts.Parent.ColorOrder, 1)) + 1;
+  % revert cycling of color order index
+  opts.Parent.ColorOrderIndex = mod(opts.Parent.ColorOrderIndex - 2, size(opts.Parent.ColorOrder, 1)) + 1;
 
-    opts.Parent.XLim = opts.Parent.XLim; % fix axes
-    opts.Parent.YLim = opts.Parent.YLim;
+  opts.Parent.XLim = opts.Parent.XLim; % fix axes
+  opts.Parent.YLim = opts.Parent.YLim;
 end
 
 % convert x and y to screen coordinates
 [xs, ys, scaleX, scaleY] = data_to_screen(x, y, opts.Parent);
 
 if opts.Method == "Absolute"
-    % create a polygon by offsetting 
-    xoffset = opts.Length.*cosd(opts.Angle);
-    yoffset = opts.Length.*sind(opts.Angle);
+  % create a polygon by offsetting
+  xoffset = opts.Length.*cosd(opts.Angle);
+  yoffset = opts.Length.*sind(opts.Angle);
 
-    xpolys = [xs, fliplr(xs)+xoffset, xs(1)];
-    ypolys = [ys, fliplr(ys)+yoffset, ys(1)];
+  xpolys = [xs, fliplr(xs)+xoffset, xs(1)];
+  ypolys = [ys, fliplr(ys)+yoffset, ys(1)];
 
-    % convert back to data coords
-    [xpoly, ypoly] = screen_to_data(xpolys, ypolys, scaleX, scaleY);
+  % convert back to data coords
+  [xpoly, ypoly] = screen_to_data(xpolys, ypolys, scaleX, scaleY);
 
-    % generate hatch lines without bounds
-    opts2 = rmfield(opts, ["Length", "Method", "RelTol"]);
-    opts2.PlotBounds = false;
-    opts2.Plot = false;
-    nvPairs = namedargs2cell(opts2);
-    [~, xplot, yplot] = hatch(xpoly, ypoly, nvPairs{:});
+  % generate hatch lines without bounds
+  opts2 = rmfield(opts, ["Length", "Method", "RelTol"]);
+  opts2.PlotBounds = false;
+  opts2.Plot = false;
+  nvPairs = namedargs2cell(opts2);
+  [~, xplot, yplot] = hatch(xpoly, ypoly, nvPairs{:});
 
-    [h, xplot, yplot] = plot_hatch(x, y, xplot, yplot, opts);
-    
+  [h, xplot, yplot] = plot_hatch(x, y, xplot, yplot, opts);
+
 else
-    % opts.Method == relative
+  % opts.Method == relative
 
-    % parameterize curve as a function of arc-length
-    [tmax, fx, fy, fa] = parameterize(xs, ys);
+  % parameterize curve as a function of arc-length
+  [tmax, fx, fy, fa] = parameterize(xs, ys);
 
-    % make tick marks
-    [xhs, yhs] = make_ticks(tmax, fx, fy, fa, opts.Angle, opts.Length, opts.Spacing);
+  % make tick marks
+  [xhs, yhs] = make_ticks(tmax, fx, fy, fa, opts.Angle, opts.Length, opts.Spacing);
 
-    % check for self-intersections
-    [xhs2, yhs2] = clip_to_line(xs, ys, xhs, yhs, opts.RelTol);
+  % check for self-intersections
+  [xhs2, yhs2] = clip_to_line(xs, ys, xhs, yhs, opts.RelTol);
 
-    % convert back to data coordinates
-    [xh, yh] = screen_to_data(xhs2, yhs2, scaleX, scaleY);
+  % convert back to data coordinates
+  [xh, yh] = screen_to_data(xhs2, yhs2, scaleX, scaleY);
 
-    % plot
-    [h, xplot, yplot] = plot_hatch(x, y, xh, yh, opts);
+  % plot
+  [h, xplot, yplot] = plot_hatch(x, y, xh, yh, opts);
 
 end
 
@@ -103,8 +151,8 @@ screenHeight = pos(4);
 % seems to work
 scaleX = screenWidth./dataWidth;
 scaleY = screenHeight./dataHeight ...
-       .* ha.PlotBoxAspectRatio(2)./ha.PlotBoxAspectRatio(1) ...
-       .* screenWidth./screenHeight;
+  .* ha.PlotBoxAspectRatio(2)./ha.PlotBoxAspectRatio(1) ...
+  .* screenWidth./screenHeight;
 xs = x.*scaleX;
 ys = y.*scaleY;
 
@@ -121,23 +169,23 @@ function [h, xplot, yplot] = plot_hatch(xc, yc, xh, yh, opts)
 % plot hatch and optionally bounds as a single line
 
 if opts.PlotBounds
-    xplot = [xc, nan, xh];
-    yplot = [yc, nan, yh];
+  xplot = [xc, nan, xh];
+  yplot = [yc, nan, yh];
 else
-    xplot = xh;
-    yplot = yh;
+  xplot = xh;
+  yplot = yh;
 end
 
 if opts.Plot
-    h = plot(opts.Parent, xplot, yplot, ...
-           LineStyle=opts.LineStyle, ...
-           Color=opts.Color, ...
-           LineWidth=opts.LineWidth, ...
-           DisplayName=opts.DisplayName, ...
-           Marker=opts.Marker, ...
-           MarkerSize=opts.MarkerSize);
+  h = plot(opts.Parent, xplot, yplot, ...
+    LineStyle=opts.LineStyle, ...
+    Color=opts.Color, ...
+    LineWidth=opts.LineWidth, ...
+    DisplayName=opts.DisplayName, ...
+    Marker=opts.Marker, ...
+    MarkerSize=opts.MarkerSize);
 else
-    h = [];
+  h = [];
 end
 
 end
@@ -157,8 +205,8 @@ tmax = t(end);
 
 % make angle interpolant
 ta = [t(1), ...
-      reshape([t(2:end-1);t(2:end-1)+eps(t(2:end-1))], 1, []), ...
-      t(end)];
+  reshape([t(2:end-1);t(2:end-1)+eps(t(2:end-1))], 1, []), ...
+  t(end)];
 theta2 = reshape([theta; theta], 1, []);
 fa = griddedInterpolant(ta, theta2);
 end
@@ -185,25 +233,25 @@ function [xp, yp] = clip_to_line(xs, ys, xhs, yhs, tol)
 
 tol = max(max(xs)-min(xs), max(ys)-min(ys))*tol;
 for i = 1:size(xhs, 2)
-    t = ti(:, i);
-    t1 = t(isfinite(t));
-    x1 = xi(isfinite(t), i);
-    y1 = yi(isfinite(t), i);
-    
-    % omit the cases where t1==0, the start point should be on the line
-    % doesn't handle case where the base curve tracks back on itself.
-    idx = find(t1<tol);
-    t1(idx) = [];
-    x1(idx) = [];
-    y1(idx) = [];
+  t = ti(:, i);
+  t1 = t(isfinite(t));
+  x1 = xi(isfinite(t), i);
+  y1 = yi(isfinite(t), i);
 
-    % if t1 is non-empty, we have an intersection to clip to
-    if ~isempty(t1)
-        % clip to xi and yi with the lowest ti parameter
-        [~, idx] = min(t1);
-        xhs(2, i) = x1(idx);
-        yhs(2, i) = y1(idx);
-    end
+  % omit the cases where t1==0, the start point should be on the line
+  % doesn't handle case where the base curve tracks back on itself.
+  idx = find(t1<tol);
+  t1(idx) = [];
+  x1(idx) = [];
+  y1(idx) = [];
+
+  % if t1 is non-empty, we have an intersection to clip to
+  if ~isempty(t1)
+    % clip to xi and yi with the lowest ti parameter
+    [~, idx] = min(t1);
+    xhs(2, i) = x1(idx);
+    yhs(2, i) = y1(idx);
+  end
 end
 
 % reshape so they're 1D vectors separated by nan's

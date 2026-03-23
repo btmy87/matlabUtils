@@ -1,40 +1,83 @@
+%HATCH Create hatching pattern inside a polygon
+%   HATCH fills a polygon defined by x,y coordinates with a pattern of
+%   diagonal lines (hatching). The hatching is drawn using a single line
+%   object
+%
+%   [H, XPLOT, YPLOT] = HATCH(X, Y) creates hatching in the current axes
+%   using default parameters. X and Y are 1D arrays of the same length
+%   defining the polygon vertices. Multiple disconnected polygons can be
+%   specified by separating them with NaN values in X and Y.
+%
+%   [H, XPLOT, YPLOT] = HATCH(X, Y, OPTS) allows customization via
+%   name-value options in OPTS.
+%
+%   Output Arguments:
+%       H       - Line objects for each hatch line
+%       XPLOT   - X coordinates of plotted hatch lines (data coordinates)
+%       YPLOT   - Y coordinates of plotted hatch lines (data coordinates)
+%
+%   Input Arguments:
+%       X       - (1 x N) double array of x-coordinates
+%       Y       - (1 x N) double array of y-coordinates
+%       OPTS    - Name-value options structure with fields:
+%           Parent          - Target axes (default: gca)
+%           Angle           - Line angle in degrees (default: 45)
+%           Spacing         - Spacing between lines in points (default: 12)
+%           PlotBounds      - Plot polygon boundary (logical, default: true)
+%           Plot            - Plot hatch lines (logical, default: true)
+%           Color           - Line color (default: next ColorOrder)
+%           DisplayName     - Legend label (default: "")
+%           LineWidth       - Line width (default: axes default)
+%           LineStyle       - Line style (default: axes default)
+%           Marker          - Marker symbol (default: axes default)
+%           MarkerSize      - Marker size (default: axes default)
+%
+%   Example:
+%       % Create hatching in a simple polygon
+%       x = [0 1 1 0];
+%       y = [0 0 1 1];
+%       hatch(x, y, 'Angle', 30, 'Spacing', 10, 'Color', 'red')
+%
+%   See also: patch, line
+%
+
 function [h, xplot, yplot] = hatch(x, y, opts)
 
 arguments
-    x (1, :) double
-    y (1, :) double
-    opts.Parent = gca;
-    opts.Angle (1, 1) double = 45;
-    opts.Spacing (1, 1) double = 12;
-    opts.PlotBounds (1, 1) {mustBeNumericOrLogical} = true;
-    opts.Plot (1, 1) {mustBeNumericOrLogical} = true;
+  x (1, :) double
+  y (1, :) double
+  opts.Parent = gca;
+  opts.Angle (1, 1) double = 45;
+  opts.Spacing (1, 1) double = 12;
+  opts.PlotBounds (1, 1) {mustBeNumericOrLogical} = true;
+  opts.Plot (1, 1) {mustBeNumericOrLogical} = true;
 
-    opts.Color = [];    
-    opts.DisplayName (1, 1) string = "";
-    opts.LineWidth (1, 1) double = get(gca, 'DefaultLineLineWidth');
-    opts.LineStyle (1, 1) string = get(gca, 'DefaultLineLineStyle');
-    opts.Marker (1, 1) string = get(gca, 'DefaultLineMarker');
-    opts.MarkerSize (1, 1) double = get(gca, 'DefaultLineMarkerSize');
+  opts.Color = [];
+  opts.DisplayName (1, 1) string = "";
+  opts.LineWidth (1, 1) double = get(gca, 'DefaultLineLineWidth');
+  opts.LineStyle (1, 1) string = get(gca, 'DefaultLineLineStyle');
+  opts.Marker (1, 1) string = get(gca, 'DefaultLineMarker');
+  opts.MarkerSize (1, 1) double = get(gca, 'DefaultLineMarkerSize');
 end
 
 assert(ndims(x) == ndims(y) && all(size(x)==size(y)), ...
-    "x and y arrays must be the same size\n");
+  "x and y arrays must be the same size\n");
 
 assert(all(isnan(x) == isnan(y)), ...
-    "Segment pattern (nan's) must match between x and y");
+  "Segment pattern (nan's) must match between x and y");
 
 if isempty(opts.Color)
-    opts.Color = opts.Parent.ColorOrder(opts.Parent.ColorOrderIndex, :);
+  opts.Color = opts.Parent.ColorOrder(opts.Parent.ColorOrderIndex, :);
 end
 
 % force parent to draw so we have screen coordinates, use a dummy patch
 % object to force axes limits if they haven't already been locked
 if string(opts.Parent.XLimMode) == "auto" || string(opts.Parent.YLimMode) == "auto"
-    hpatch = patch(opts.Parent, 'XData', x, 'YData', y);
-    drawnow;
-    delete(hpatch);
-    opts.Parent.XLim = opts.Parent.XLim; % fix axes
-    opts.Parent.YLim = opts.Parent.YLim;
+  hpatch = patch(opts.Parent, 'XData', x, 'YData', y);
+  drawnow;
+  delete(hpatch);
+  opts.Parent.XLim = opts.Parent.XLim; % fix axes
+  opts.Parent.YLim = opts.Parent.YLim;
 end
 
 % close polygon if not closed
@@ -63,12 +106,12 @@ function [x, y] = close_polygon(x, y)
 
 % trim leading and force trailing nan
 if isnan(x(1))
-    x = x(2:end);
-    y = y(2:end);
+  x = x(2:end);
+  y = y(2:end);
 end
 if ~isnan(x(end))
-    x = [x, nan];
-    y = [y, nan];
+  x = [x, nan];
+  y = [y, nan];
 end
 
 % identify indicies at the end of each segment
@@ -76,20 +119,20 @@ idx = find(isnan(x));
 
 % close each section
 for i = 1:length(idx)
-    if i == 1
-        iStart = 1;
-    else
-        iStart = idx(i-1);
-    end
-    iEnd = idx(i);
-    if x(iStart)~=x(iEnd) || y(iStart)~=y(iEnd)
-        % shift entries down and add new entry
-        x = [x(1:iEnd-1),x(iStart),x(iEnd:end)];
-        y = [y(1:iEnd-1),y(iStart),y(iEnd:end)];
+  if i == 1
+    iStart = 1;
+  else
+    iStart = idx(i-1);
+  end
+  iEnd = idx(i);
+  if x(iStart)~=x(iEnd) || y(iStart)~=y(iEnd)
+    % shift entries down and add new entry
+    x = [x(1:iEnd-1),x(iStart),x(iEnd:end)];
+    y = [y(1:iEnd-1),y(iStart),y(iEnd:end)];
 
-        % update ending indices for this and later segments
-        idx(i:end) = idx(i:end)+1;
-    end
+    % update ending indices for this and later segments
+    idx(i:end) = idx(i:end)+1;
+  end
 end
 
 end
@@ -111,8 +154,8 @@ screenHeight = pos(4);
 % seems to work
 scaleX = screenWidth./dataWidth;
 scaleY = screenHeight./dataHeight ...
-       .* ha.PlotBoxAspectRatio(2)./ha.PlotBoxAspectRatio(1) ...
-       .* screenWidth./screenHeight;
+  .* ha.PlotBoxAspectRatio(2)./ha.PlotBoxAspectRatio(1) ...
+  .* screenWidth./screenHeight;
 xs = x.*scaleX;
 ys = y.*scaleY;
 
@@ -176,24 +219,24 @@ yhst = [];
 
 % loop through hatch lines
 for iHatch = 1:size(xi, 2)
-    % find indices of intersections
-    k = find(~isnan(xi(:, iHatch)));
+  % find indices of intersections
+  k = find(~isnan(xi(:, iHatch)));
 
-    % find coordinates of intersections, and sort
-    x = xi(k, iHatch);
-    y = yi(k, iHatch);
-    t = ti(k, iHatch);
-    [~, isort] = sort(t);
-    xsort = x(isort);
-    ysort = y(isort);
+  % find coordinates of intersections, and sort
+  x = xi(k, iHatch);
+  y = yi(k, iHatch);
+  t = ti(k, iHatch);
+  [~, isort] = sort(t);
+  xsort = x(isort);
+  ysort = y(isort);
 
-    % loop through pairs of intersections and save
-    for iIntersect = 1:2:(length(k)-1)
-        xhst = [xhst, [xsort(iIntersect);...
-                       xsort(iIntersect+1)]]; %#ok<AGROW>
-        yhst = [yhst, [ysort(iIntersect);...
-                       ysort(iIntersect+1)]]; %#ok<AGROW>
-    end
+  % loop through pairs of intersections and save
+  for iIntersect = 1:2:(length(k)-1)
+    xhst = [xhst, [xsort(iIntersect);...
+      xsort(iIntersect+1)]]; %#ok<AGROW>
+    yhst = [yhst, [ysort(iIntersect);...
+      ysort(iIntersect+1)]]; %#ok<AGROW>
+  end
 end
 
 end
@@ -206,23 +249,23 @@ xhp = reshape([xh; nan(1, size(xh, 2))], 1, []);
 yhp = reshape([yh; nan(1, size(yh, 2))], 1, []);
 
 if opts.PlotBounds
-    xplot = [xc, nan, xhp];
-    yplot = [yc, nan, yhp];
+  xplot = [xc, nan, xhp];
+  yplot = [yc, nan, yhp];
 else
-    xplot = xhp;
-    yplot = yhp;
+  xplot = xhp;
+  yplot = yhp;
 end
 
 if opts.Plot
-    h = plot(opts.Parent, xplot, yplot, ...
-           LineStyle=opts.LineStyle, ...
-           Color=opts.Color, ...
-           LineWidth=opts.LineWidth, ...
-           DisplayName=opts.DisplayName, ...
-           Marker=opts.Marker, ...
-           MarkerSize=opts.MarkerSize);
+  h = plot(opts.Parent, xplot, yplot, ...
+    LineStyle=opts.LineStyle, ...
+    Color=opts.Color, ...
+    LineWidth=opts.LineWidth, ...
+    DisplayName=opts.DisplayName, ...
+    Marker=opts.Marker, ...
+    MarkerSize=opts.MarkerSize);
 else
-    h = [];
+  h = [];
 end
 
 end
